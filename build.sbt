@@ -10,7 +10,9 @@ lazy val root = (project in file(".")).
     name := "Ankist",
 
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp" %% "core" % "1.1.14",
+      "com.softwaremill.sttp" %% "core"   % "1.1.14",
+      "com.softwaremill.sttp" %% "json4s" % "1.1.14",
+
       scalaTest % Test
     )
   )
