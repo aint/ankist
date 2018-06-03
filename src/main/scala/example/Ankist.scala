@@ -24,7 +24,7 @@ object Ankist {
     getLinguaLeoResponse(word)
   }
 
-  private def wordToMp3(word: String) = {
+  private def wordToMp3(word: String): Unit = {
     val request = sttp
       .get(uri"$GOOGLE_TRANSLATE_API&q=$word")
       .header("User-Agent", USER_AGENT)
@@ -32,12 +32,15 @@ object Ankist {
 
     val response = request.send()
 
-    val path = Paths.get(s"$word.mp3")
-    val body = response.body.right.get
-    Files.write(path, body)
+    response.body match {
+      case Left(error) => println(s"Some error occurred: $error")
+      case Right(body) =>
+        val path = Paths.get(s"$word.mp3")
+        Files.write(path, body)
+    }
   }
 
-  private def getLinguaLeoResponse(word: String) = {
+  private def getLinguaLeoResponse(word: String): Unit = {
     def parseJson(json: String): LinguaLeoResponse = JsonMethods.parse(json).camelizeKeys.extract[LinguaLeoResponse]
     val asJson: ResponseAs[LinguaLeoResponse, Nothing] = asString.map(parseJson)
 
@@ -48,7 +51,10 @@ object Ankist {
 
     val response = request.send()
 
-    println(response.body)
+    response.body match {
+      case Left(error) => println(s"Some error occurred: $error")
+      case Right(body) => println(body)
+    }
   }
 
 
