@@ -20,40 +20,44 @@ object Ankist {
   def main(args: Array[String]): Unit = {
     val word = "comprehension"
 
-    wordToMp3(word)
-    getLinguaLeoResponse(word)
+    wordToMp3(downloadFile, word)
+
+    val leoResponse = getLinguaLeoResponse(word)
+    println(leoResponse)
   }
 
-  private def wordToMp3(word: String): Unit = {
-    val request = sttp
-      .get(uri"$GOOGLE_TRANSLATE_API&q=$word")
+  private def wordToMp3(fun: String => Array[Byte], word: String): Unit = {
+    val bytes = fun(s"$GOOGLE_TRANSLATE_API&q=$word")
+    val path = Paths.get(s"$word.mp3")
+    Files.write(path, bytes)
+  }
+
+  private def downloadFile(url: String): Array[Byte] = {
+    val response = sttp
+      .get(uri"$url")
       .header("User-Agent", USER_AGENT)
       .response(asByteArray)
-
-    val response = request.send()
+      .send()
 
     response.body match {
-      case Left(error) => println(s"Some error occurred: $error")
-      case Right(body) =>
-        val path = Paths.get(s"$word.mp3")
-        Files.write(path, body)
+      case Left(error) => throw new RuntimeException(s"Error while downloading file: $error")
+      case Right(body) => body
     }
   }
 
-  private def getLinguaLeoResponse(word: String): Unit = {
+  private def getLinguaLeoResponse(word: String): LinguaLeoResponse = {
     def parseJson(json: String): LinguaLeoResponse = JsonMethods.parse(json).camelizeKeys.extract[LinguaLeoResponse]
     val asJson: ResponseAs[LinguaLeoResponse, Nothing] = asString.map(parseJson)
 
-    val request = sttp
+    val response = sttp
       .get(uri"$LINGUA_LEO_API?word=$word")
       .header("User-Agent", USER_AGENT)
       .response(asJson)
-
-    val response = request.send()
+      .send()
 
     response.body match {
-      case Left(error) => println(s"Some error occurred: $error")
-      case Right(body) => println(body)
+      case Left(error) => throw new RuntimeException(s"Error while requesting LinguaLeo: $error")
+      case Right(body) => body
     }
   }
 
