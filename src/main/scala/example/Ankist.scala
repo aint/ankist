@@ -4,6 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 import com.softwaremill.sttp._
+import example.json.LinguaLeoResponse
 import org.json4s._
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods
@@ -60,27 +61,5 @@ object Ankist {
       case Right(body) => body
     }
   }
-
-
-  case class LinguaLeoResponse(
-    errorMsg: String,
-    translateSource: String,
-    isUser: Int,
-    wordForms: List[WordForm],
-    picUrl: String,
-    translate: List[Translate],
-    transcription: String,
-    wordId: Int,
-    wordTop: Int,
-    soundUrl: String)
-
-  case class Translate(
-    id: Int,
-    value: String,
-    votes: Int,
-    isUser: Int,
-    picUrl: String)
-
-  case class WordForm(word: String, `type`: String)
 
 }
