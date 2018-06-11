@@ -13,6 +13,9 @@ lazy val root = (project in file(".")).
       "com.softwaremill.sttp" %% "core"   % "1.1.14",
       "com.softwaremill.sttp" %% "json4s" % "1.1.14",
 
+      "io.vertx" %% "vertx-lang-scala"       % "3.5.2",
+      "io.vertx" %% "vertx-web-client-scala" % "3.5.2",
+
       scalaTest % Test
     )
   )
