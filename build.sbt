@@ -16,6 +16,9 @@ lazy val root = (project in file(".")).
       "io.vertx" %% "vertx-lang-scala"       % "3.5.2",
       "io.vertx" %% "vertx-web-client-scala" % "3.5.2",
 
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.5",
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.5",
+
       scalaTest % Test
     )
   )

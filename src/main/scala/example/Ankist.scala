@@ -71,19 +71,20 @@ object Ankist {
 //  }
 
   private def getLinguaLeoResponse(word: String): LinguaLeoResponse = {
-    def parseJson(json: String): LinguaLeoResponse = JsonMethods.parse(json).camelizeKeys.extract[LinguaLeoResponse]
-    val asJson: ResponseAs[LinguaLeoResponse, Nothing] = asString.map(parseJson)
-
-    val response = sttp
-      .get(uri"$LINGUA_LEO_API?word=$word")
-      .header("User-Agent", USER_AGENT)
-      .response(asJson)
-      .send()
-
-    response.body match {
-      case Left(error) => throw new RuntimeException(s"Error while requesting LinguaLeo: $error")
-      case Right(body) => body
-    }
+    client.get(LINGUA_LEO_BASE_URL, s"$LINGUA_LEO_TRANSLATE_API?word=$word")
+      .sendFuture()
+      .map(_.bodyAsString)
+      .onComplete{
+        case Success(result) =>
+          val mapper = new ObjectMapper()
+          mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
+          mapper.registerModule(DefaultScalaModule)
+          val response = mapper.readValue(result.get, classOf[LinguaLeoResponse])
+          println(response)
+        case Failure(cause) =>
+          println(s"$cause")
+      }
+    null
   }
 
 }
