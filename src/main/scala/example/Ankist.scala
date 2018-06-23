@@ -18,7 +18,8 @@ import scala.util.{Failure, Success}
 object Ankist {
 
   val USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"
-  val LINGUA_LEO_API = "http://api.lingualeo.com/gettranslates"
+  val LINGUA_LEO_BASE_URL = "api.lingualeo.com"
+  val LINGUA_LEO_TRANSLATE_API = "/gettranslates"
   val GOOGLE_TRANSLATE_BASE_URL = "translate.google.com"
   val GOOGLE_TRANSLATE_API = "/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob"
 
