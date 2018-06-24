@@ -3,13 +3,9 @@ package example
 import java.nio.file.Files
 import java.nio.file.Paths
 
-import com.softwaremill.sttp._
 import example.json.LinguaLeoResponse
 import io.vertx.scala.core.Vertx
 import io.vertx.scala.ext.web.client.WebClient
-import org.json4s._
-import org.json4s.DefaultFormats
-import org.json4s.native.JsonMethods
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -22,9 +18,6 @@ object Ankist {
   val LINGUA_LEO_TRANSLATE_API = "/gettranslates"
   val GOOGLE_TRANSLATE_BASE_URL = "translate.google.com"
   val GOOGLE_TRANSLATE_API = "/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob"
-
-  implicit val backend = HttpURLConnectionBackend()
-  implicit val formats = DefaultFormats
 
   private val vertx = Vertx.vertx()
   private val client = WebClient.create(vertx)
