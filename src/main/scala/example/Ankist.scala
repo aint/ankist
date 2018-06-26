@@ -1,14 +1,18 @@
 package example
 
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.nio.file.{Files, Path, Paths}
 
+import com.fasterxml.jackson.databind.{ObjectMapper, PropertyNamingStrategy}
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import example.json.LinguaLeoResponse
+import io.vertx.core.buffer.Buffer
 import io.vertx.scala.core.Vertx
 import io.vertx.scala.ext.web.client.WebClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.Duration._
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
 object Ankist {
@@ -25,15 +29,16 @@ object Ankist {
   def main(args: Array[String]): Unit = {
     val word = "comprehension"
 
-    wordToMp3(word)
-
-    val leoResponse = getLinguaLeoResponse(word)
+    val leoResponse = Await.result(getLinguaLeoResponse(word), Duration(3, "sec"))
     println(leoResponse)
-  }
+    val picUrl = leoResponse.picUrl.getOrElse(leoResponse.translate.map(_.picUrl).head)
+    val mp3Url = leoResponse.soundUrl
+    println(picUrl)
+    println(mp3Url)
+
 
   }
 
-  private def wordToPng(fun: String => Array[Byte], pngUrl: Option[String], word: String): Unit = {
   private def wordToMp3(word: String): Unit = {
     client.get(GOOGLE_TRANSLATE_BASE_URL, s"$GOOGLE_TRANSLATE_API&q=$word")
       .sendFuture()
@@ -64,21 +69,18 @@ object Ankist {
 //    //TODO return Option
 //  }
 
-  private def getLinguaLeoResponse(word: String): LinguaLeoResponse = {
-    client.get(LINGUA_LEO_BASE_URL, s"$LINGUA_LEO_TRANSLATE_API?word=$word")
-      .sendFuture()
-      .map(_.bodyAsString)
-      .onComplete{
-        case Success(result) =>
+  private def getLinguaLeoResponse(word: String): Future[LinguaLeoResponse] = {
+    client.get(LINGUA_LEO_BASE_URL, s"$LINGUA_LEO_TRANSLATE_API?word=$word").sendFuture()
+        .map(_.bodyAsBuffer())
+        .map(_.get)
+        .map(_.getBytes)
+        .map(bytes => {
           val mapper = new ObjectMapper()
           mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
           mapper.registerModule(DefaultScalaModule)
-          val response = mapper.readValue(result.get, classOf[LinguaLeoResponse])
-          println(response)
-        case Failure(cause) =>
-          println(s"$cause")
-      }
-    null
+
+          mapper.readValue(bytes, classOf[LinguaLeoResponse])
+        })
   }
 
 }
