@@ -31,7 +31,7 @@ object Ankist {
 
     val leoResponse = Await.result(getLinguaLeoResponse(word), Duration(3, "sec"))
     println(leoResponse)
-    val picUrl = leoResponse.picUrl.getOrElse(leoResponse.translate.map(_.picUrl).head)
+    val picUrl = leoResponse.picUrl.getOrElse(leoResponse.translate.map(_.picUrl).filter(_.nonEmpty).head)
     val mp3Url = leoResponse.soundUrl
     println(picUrl)
     println(mp3Url)
