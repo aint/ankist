@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.{ObjectMapper, PropertyNamingStrategy}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import example.json.LinguaLeoResponse
 import io.vertx.core.buffer.Buffer
+import io.vertx.scala.ext.web.client.{HttpRequest, HttpResponse, WebClient}
 import io.vertx.scala.core.Vertx
-import io.vertx.scala.ext.web.client.WebClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -81,6 +81,17 @@ object Ankist {
 
           mapper.readValue(bytes, classOf[LinguaLeoResponse])
         })
+  }
+
+  //todo extract to some helper object
+  implicit class HttpRequestExt(request: HttpRequest[Buffer]) {
+
+    implicit def returnBytesFuture(): Future[Array[Byte]] =
+      request
+        .sendFuture()
+        .map(_.bodyAsBuffer())
+        .map(_.get)             //todo: refactor this
+        .map(_.getBytes)
   }
 
 }
