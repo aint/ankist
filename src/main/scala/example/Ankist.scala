@@ -53,6 +53,9 @@ object Ankist {
       }
   }
 
+  private def saveAsFile(bytes: Array[Byte], fileNameWithExt: String): Unit = {
+    val path = Paths.get(fileNameWithExt)
+    Files.write(path, bytes)
   }
 
 //  private def downloadFile(url: (String, String)): Array[Byte] = {
