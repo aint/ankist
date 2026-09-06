@@ -14,8 +14,9 @@ import org.json.JSONObject;
 
 private static final String LOCALE = "es-MX";
 private static final String GEMINI_API_KEY = "";
-private static final String GEMINI_FLASH_LITE_API = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent";
-private static final String GEMINI_FLASH_LITE_IMAGE_API = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent";
+private static final String GEMINI_GENERATE_CONTENT_API = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent";
+private static final String GEMINI_FLASH_LITE_LATEST = "gemini-flash-lite-latest";
+private static final String GEMINI_FLASH_LITE_IMAGE_3_1 = "gemini-3.1-flash-lite-image";
 private static final String GOOGLE_TTS_URL = "http://translate.google.com/translate_tts?tl=%s&client=tw-ob&q=%s";
 
 private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
@@ -68,7 +69,7 @@ private Translation example(String text) {
           }
         }
         """.formatted(text);
-    final var endpoint = URI.create(GEMINI_FLASH_LITE_API);
+    final var endpoint = URI.create(GEMINI_GENERATE_CONTENT_API.formatted(GEMINI_FLASH_LITE_LATEST));
     var responseBody = postJson(endpoint, jsonPayload);
 
     try {
@@ -117,7 +118,7 @@ private void image(String text) {
        }
      }
      """.formatted(text);
-    final var endpoint = URI.create(GEMINI_FLASH_LITE_IMAGE_API);
+    final var endpoint = URI.create(GEMINI_GENERATE_CONTENT_API.formatted(GEMINI_FLASH_LITE_IMAGE_3_1));
     var responseBody = postJson(endpoint, jsonPayload);
 
     try {
