@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/travis-ci/travis-web.svg?branch=master)](https://travis-ci.org/travis-ci/travis-web)
+[![Build](https://github.com/aint/ankist/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/aint/ankist/actions/workflows/build.yml)
 
 # ankist
 Generates collection of word+image+pronunciation+example for Anki app.
