@@ -6,6 +6,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 
@@ -18,20 +19,23 @@ private static final String GEMINI_GENERATE_CONTENT_API = "https://generativelan
 private static final String GEMINI_FLASH_LITE_LATEST = "gemini-flash-lite-latest";
 private static final String GEMINI_FLASH_LITE_IMAGE_3_1 = "gemini-3.1-flash-lite-image";
 private static final String GOOGLE_TTS_URL = "http://translate.google.com/translate_tts?tl=%s&client=tw-ob&q=%s";
+private static final Path OUTPUT_DIR = Paths.get("output");
 
 private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
-private record Translation(String spanish, String english) {}
+private record Translation(String meaning, String spanish, String english) {}
 
-void main() {
-    var word = "desafortunadamente";
-    tts(word);
-    image(word);
+void main() throws IOException {
+    Files.createDirectories(OUTPUT_DIR);
+
+    var word = "bobo";
+    var wordAudio = tts(word);
+    var wordImage = image(word);
     var example = example(word);
-    tts(example.spanish);
+    var sentenceAudio = tts(example.spanish());
 }
 
-private void tts(String text) {
+private Path tts(String text) {
     final var q = URLEncoder.encode(text, StandardCharsets.UTF_8);
     final var url = GOOGLE_TTS_URL.formatted(LOCALE, q);
     var request = HttpRequest.newBuilder()
@@ -45,7 +49,9 @@ private void tts(String text) {
             throw new RuntimeException("TTS request for '%s' failed with status %d".formatted(text, response.statusCode()));
         }
 
-        Files.write(Paths.get(text.replace(" ", "_") + ".mp3"), response.body());
+        var audioPath = OUTPUT_DIR.resolve(text.replace(" ", "_") + ".mp3");
+        Files.write(audioPath, response.body());
+        return audioPath;
     } catch (InterruptedException | IOException e) {
         throw new RuntimeException("Failed to TTS audio for '" + text + "'", e);
     }
@@ -97,7 +103,7 @@ private Translation example(String text) {
     }
 }
 
-private void image(String text) {
+private Path image(String text) {
     final var jsonPayload = """
      {
        "contents": [
@@ -132,8 +138,10 @@ private void image(String text) {
                 .getString("data");
 
         byte[] imageBytes = Base64.getDecoder().decode(base64Data);
-        Files.write(Paths.get(text + ".png"), imageBytes);
-        IO.println("Successfully saved image to " + text + ".png");
+        var imagePath = OUTPUT_DIR.resolve(text + ".png");
+        Files.write(imagePath, imageBytes);
+        IO.println("Successfully saved image to " + imagePath);
+        return imagePath;
     } catch (JSONException e) {
         throw new RuntimeException("Unexpected Gemini response shape for '%s': %s".formatted(text, responseBody), e);
     } catch (IOException e) {
