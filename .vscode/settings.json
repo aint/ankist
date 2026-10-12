@@ -1,0 +1,9 @@
+{
+  "jdk.jdkhome": "/opt/homebrew/Cellar/openjdk/26.0.2/libexec/openjdk.jdk/Contents/Home",
+  "files.associations": {
+    "*.gradle.kts": "kotlin"
+  },
+  "[java]": {
+    "editor.formatOnSave": false
+  }
+}

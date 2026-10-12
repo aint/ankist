@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -20,6 +21,10 @@ private static final String GEMINI_FLASH_LITE_LATEST = "gemini-flash-lite-latest
 private static final String GEMINI_FLASH_LITE_IMAGE_3_1 = "gemini-3.1-flash-lite-image";
 private static final String GOOGLE_TTS_URL = "http://translate.google.com/translate_tts?tl=%s&client=tw-ob&q=%s";
 private static final Path OUTPUT_DIR = Paths.get("output");
+
+private static final String ANKI_CONNECT_URL = "http://localhost:8765";
+private static final String ANKI_DECK_NAME = "Spanish";
+private static final String ANKI_MODEL_NAME = "Visual Basic";
 
 private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
@@ -33,6 +38,8 @@ void main() throws IOException {
     var wordImage = image(word);
     var example = example(word);
     var sentenceAudio = tts(example.spanish());
+
+    // addToAnki(word, example, wordAudio, sentenceAudio, wordImage);
 }
 
 private Path tts(String text) {
@@ -65,16 +72,17 @@ private Translation example(String text) {
           },
           "contents": [
             {
-              "parts": [{ "text": "Give an example sentence for '%s' using a simple language, but more than 4 words,
-              and an English translation of that sentence in the following json format:
-              {'spanish': 'example', 'english': 'translation'}" }]
+              "parts": [{ "text": "Give a short English meaning of the Spanish word '%s', an example sentence for
+              '%s' using a simple language, but more than 4 words, and an English translation of that sentence
+              in the following json format:
+              {'meaning': 'translation of the word', 'spanish': 'example', 'english': 'translation'}" }]
             }
           ],
           "generationConfig": {
             "responseMimeType": "application/json"
           }
         }
-        """.formatted(text);
+        """.formatted(text, text);
     final var endpoint = URI.create(GEMINI_GENERATE_CONTENT_API.formatted(GEMINI_FLASH_LITE_LATEST));
     var responseBody = postJson(endpoint, jsonPayload);
 
@@ -90,6 +98,7 @@ private Translation example(String text) {
         var jsonObject = new JSONObject(rawExampleJson);
 
         var translation = new Translation(
+                jsonObject.getString("meaning"),
                 jsonObject.getString("spanish"),
                 jsonObject.getString("english")
         );
@@ -167,5 +176,74 @@ private String postJson(URI endpoint, String jsonPayload) {
         return response.body();
     } catch (IOException | InterruptedException e) {
         throw new RuntimeException("Failed to call " + endpoint, e);
+    }
+}
+
+private void addToAnki(String word, Translation example, Path wordAudio, Path sentenceAudio, Path image) {
+    var wordAudioFilename = storeMediaFile(wordAudio);
+    var sentenceAudioFilename = storeMediaFile(sentenceAudio);
+    var imageFilename = storeMediaFile(image);
+
+    var fields = new JSONObject()
+            .put("Word", word)
+            .put("Meaning", example.meaning())
+            .put("Audio", "[sound:%s]".formatted(wordAudioFilename))
+            .put("Sentence", example.spanish())
+            .put("Sentence-English", example.english())
+            .put("Sentence Audio", "[sound:%s]".formatted(sentenceAudioFilename))
+            .put("Image", "<img src=\"%s\">".formatted(imageFilename));
+
+    var note = new JSONObject()
+            .put("deckName", ANKI_DECK_NAME)
+            .put("modelName", ANKI_MODEL_NAME)
+            .put("fields", fields)
+            .put("options", new JSONObject().put("allowDuplicate", false))
+            .put("tags", new JSONArray());
+
+    var noteId = ankiConnectRequest("addNote", new JSONObject().put("note", note)).get("result");
+    IO.println("Added note %s to Anki deck '%s' with id %s".formatted(word, ANKI_DECK_NAME, noteId));
+}
+
+private String storeMediaFile(Path path) {
+    try {
+        var filename = path.getFileName().toString();
+        var data = Base64.getEncoder().encodeToString(Files.readAllBytes(path));
+        var params = new JSONObject()
+                .put("filename", filename)
+                .put("data", data);
+
+        ankiConnectRequest("storeMediaFile", params);
+        return filename;
+    } catch (IOException e) {
+        throw new RuntimeException("Failed to read media file " + path, e);
+    }
+}
+
+private JSONObject ankiConnectRequest(String action, JSONObject params) {
+    var payload = new JSONObject()
+            .put("action", action)
+            .put("version", 6)
+            .put("params", params)
+            .toString();
+    var request = HttpRequest.newBuilder()
+            .uri(URI.create(ANKI_CONNECT_URL))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(payload))
+            .build();
+
+    try {
+        var response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("AnkiConnect request '%s' failed with status %d: %s".formatted(action, response.statusCode(), response.body()));
+        }
+
+        var responseJson = new JSONObject(response.body());
+        if (!responseJson.isNull("error")) {
+            throw new RuntimeException("AnkiConnect request '%s' returned error: %s".formatted(action, responseJson.getString("error")));
+        }
+
+        return responseJson;
+    } catch (IOException | InterruptedException e) {
+        throw new RuntimeException("Failed to call AnkiConnect action '" + action + "'", e);
     }
 }
